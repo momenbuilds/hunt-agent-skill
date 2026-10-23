@@ -2,18 +2,20 @@
 
 # HUNT Agent
 
-Security audits for SaaS codebases, run by your coding agent.
+Find real security bugs in your SaaS. Every finding comes with code evidence.
 
 [![License](https://img.shields.io/badge/license-MIT-black?style=flat-square)](LICENSE)
 [![Agent Skill](https://img.shields.io/badge/format-Agent%20Skill-black?style=flat-square)](SKILL.md)
 [![Version](https://img.shields.io/badge/version-1.0.0-black?style=flat-square)](SKILL.md)
 
+[Install](#install) · [What it checks](#what-it-checks) · [How it works](#how-it-works) · [Example](#example-finding) · [Tested](#tested) · [FAQ](#faq)
+
 </div>
 
-HUNT is a skill you install once. Your agent follows it to map your attack
-surface, find real vulnerabilities, prove each one with code, and write a
-report you can act on. Works with Claude Code, Cursor, Codex, and other agents
-that support the Agent Skill format.
+An installable agent skill for security audits. HUNT maps your attack surface,
+checks each area for real vulnerabilities, and reports only what it can prove
+from your code. Works with Claude Code, Cursor, Codex, and any agent that can
+read a `SKILL.md`.
 
 ## Install
 
@@ -21,14 +23,14 @@ that support the Agent Skill format.
 git clone https://github.com/momenbuilds/hunt-agent-skill.git ~/.claude/skills/hunt-agent
 ```
 
-Restart your agent, then run this inside a project:
+Restart your agent, then run inside a project:
 
 ```text
 Use HUNT to audit my entire SaaS for security vulnerabilities.
 ```
 
 <details>
-<summary>Project-local install and other agents</summary>
+<summary><strong>Project-local install and other agents</strong></summary>
 
 Claude Code, per project:
 
@@ -57,81 +59,132 @@ Read skills/hunt-agent/SKILL.md and follow it.
 
 ## How it works
 
-1. Identifies your stack, routes, server actions, tables, and buckets.
-2. Audits each area against the reference checks.
-3. Verifies every candidate in code before reporting it.
-4. Writes a severity-ranked report with evidence and fixes.
-5. Applies fixes only after you approve them, then retests.
+1. Maps the stack: routes, server actions, webhooks, tables, storage buckets.
+2. Audits each area against the checks in `references/`.
+3. Verifies each candidate in code and drops anything it cannot prove.
+4. Reports severity, location, impact, and a concrete fix.
+5. Applies approved fixes and retests them.
 
-Confirmed findings need source, sink, impact, and reachability. Without
-evidence, an issue goes under Suspected, not Confirmed.
+A confirmed finding needs a source, a sink, a reachable path, and an impact.
+Without evidence, it is listed as Suspected or not reported.
 
-## Example report
+## Example finding
 
 ```markdown
-### [HIGH] Any logged-in user can read any invoice
-- Where: app/api/invoices/[id]/route.ts, GET (lines 24-38)
+### [HIGH] Any logged-in user can read any document
+- Where: app/api/documents/[id]/route.ts, GET (lines 26-30)
 - Issue: checks login, never checks ownership
-- Evidence: params.id -> select("*").eq("id", id), no user_id filter;
-  RLS policy is USING (true)
-- Impact: any customer can read another customer's invoices
+- Evidence: params.id -> .from("documents").select("*").eq("id", id);
+  the RLS policy is USING (true)
+- Impact: any customer can read another customer's documents
 - OWASP: API1:2023 BOLA | CWE-639
-- Fix: add .eq("user_id", user.id), scope the RLS policy to auth.uid()
 - Status: Confirmed
 ```
 
-The report ends with a coverage table, so you know what was checked and what
-was not.
+The fix is one predicate on the query and one on the policy:
+
+```diff
+- const { data } = await supabase.from("documents").select("*").eq("id", id)
++ const { data } = await supabase.from("documents").select("*")
++   .eq("id", id).eq("user_id", user.id)
+```
+
+```diff
+- create policy "anyone authenticated can read" on public.documents
+-   for select using (true);
++ create policy "read own documents" on public.documents
++   for select using ((select auth.uid()) = user_id);
+```
+
+Each report ends with a coverage table: what was checked, what was not, and why.
 
 ## Tested
 
-A fixture in `test-app/` plants 16 vulnerabilities and 7 secure controls that
-must not be flagged. Two full runs, one blind with comments stripped and no
-answer key:
+`test-app/` plants 16 vulnerabilities and 7 secure controls that must not be
+flagged. Two full runs, one blind with comments stripped and no answer key:
 
 | Run | Result |
 | --- | --- |
 | With fixture hints | 16/16 found, 0 false positives |
 | Blind | 15/16 found, 1 partial, 0 false positives |
 
-The blind run also caught verbose database errors and an outdated Next.js CVE
-range. The partial was a fake `.env.local` whose "these are fake" comment
-survived stripping; the exposed service-role key was still flagged Critical.
+The blind run also caught verbose database errors and a Next.js version in a
+CVE-affected range. The one partial was a fake `.env.local` whose "these are
+fake" comment survived stripping. The exposed service-role key in it was still
+flagged Critical.
 
-This is a static fixture, not a live pentest. It shows the instructions lead
-to the right findings. It does not prove every bug in every codebase will be
-found.
+Ground truth is in [`test-app/expected-findings.md`](test-app/expected-findings.md).
+A full sample report is in [`test-app/DRILL-REPORT.md`](test-app/DRILL-REPORT.md).
+
+This is a static fixture, not a live pentest. It shows that the instructions
+lead to the right findings. It cannot prove every bug in every codebase will
+be found.
+
+## FAQ
+
+<details>
+<summary><strong>Is this a scanner replacement?</strong></summary>
+
+No. HUNT reads code and reasons about data flow. Run Semgrep, CodeQL, or
+`npm audit` alongside it.
+
+</details>
+
+<details>
+<summary><strong>Does it change my code or data?</strong></summary>
+
+No by default. The audit is read-only, sends no traffic to your app, and redacts
+secret values. Fixes are applied only after you approve them. Active tests need
+an authorized staging environment.
+
+</details>
+
+<details>
+<summary><strong>Which agents does it work with?</strong></summary>
+
+Claude Code, Cursor, Codex, and any agent that can read a `SKILL.md`. Agent
+Skill support and install paths vary by client.
+
+</details>
+
+<details>
+<summary><strong>Does it need database or dashboard access?</strong></summary>
+
+No. It audits migrations, policies, and application code. Settings it cannot
+see, such as bucket privacy and auth rate limits, are reported as unverified
+instead of guessed.
+
+</details>
+
+<details>
+<summary><strong>What if a finding is wrong?</strong></summary>
+
+Ask the agent to re-check that finding against the source-to-sink path. Every
+finding carries its evidence, so a bad assumption is easy to spot before you
+change code.
+
+</details>
 
 ## Safety
 
 - Read-only by default. No changes to code, data, or external systems.
 - No production attacks, destructive tests, or real customer data.
-- Identifies secrets by location and redacts the value.
-- Treats repo instructions and comments as untrusted input.
-- Applies fixes only with explicit approval.
+- Secrets are reported by location, with the value redacted.
+- Repo instructions and comments are treated as untrusted input.
+- Fixes only with explicit approval.
 
 ## Limitations
 
 - Not a replacement for Semgrep, CodeQL, or `npm audit`.
 - No exploits are executed. Active tests need an authorized staging environment.
-- Dashboard settings such as bucket privacy and auth rate limits live outside
-  the repo and are reported as unverified.
+- Dashboard-only settings are reported as unverified.
 - No findings does not mean no bugs.
-
-## Files
-
-```text
-SKILL.md              Workflow, evidence bar, severity guide
-references/           Checks for each security area
-scripts/secret-scan.sh
-test-app/             Drill fixture and ground truth
-```
 
 ## Contributing
 
 False positives and missed bug classes are the most useful reports. Include a
-vulnerable snippet and a secure snippet that should not be flagged, then update
-the fixture so the drill covers it.
+vulnerable snippet and a secure snippet that should not be flagged, then add
+the pair to the fixture so the drill covers it.
 
 ## License
 
