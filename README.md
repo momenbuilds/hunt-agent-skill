@@ -100,7 +100,7 @@ Each report ends with a coverage table: what was checked, what was not, and why.
 
 ## Tested
 
-`test-app/` plants 16 vulnerabilities and 7 secure controls that must not be
+`test-app/` plants 16 vulnerabilities and 9 secure controls that must not be
 flagged. Two full runs, one blind with comments stripped and no answer key:
 
 | Run | Result |
