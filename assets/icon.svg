@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160" role="img" aria-label="HUNT">
+  <rect width="160" height="160" rx="38" fill="#0B0B0C"/>
+  <rect x="1.5" y="1.5" width="157" height="157" rx="36.5" fill="none" stroke="#2B2B30" stroke-width="3"/>
+  <g fill="none" stroke="#FF4D3D" stroke-width="7" stroke-linecap="round">
+    <path d="M50.2 37.4A52 52 0 0 1 109.8 37.4"/>
+    <path d="M122.6 50.2A52 52 0 0 1 122.6 109.8"/>
+    <path d="M109.8 122.6A52 52 0 0 1 50.2 122.6"/>
+    <path d="M37.4 109.8A52 52 0 0 1 37.4 50.2"/>
+  </g>
+  <g stroke="#F2F2F2" stroke-width="6" stroke-linecap="round">
+    <path d="M80 64v12"/>
+    <path d="M80 84v12"/>
+    <path d="M64 80h12"/>
+    <path d="M84 80h12"/>
+  </g>
+  <circle cx="80" cy="80" r="5" fill="#FF4D3D"/>
+</svg>
