@@ -8,7 +8,7 @@ Find real security bugs in your SaaS. Every finding comes with code evidence.
 [![Agent Skill](https://img.shields.io/badge/format-Agent%20Skill-black?style=flat-square)](SKILL.md)
 [![Version](https://img.shields.io/badge/version-1.0.0-black?style=flat-square)](SKILL.md)
 
-[Install](#install) · [What it checks](#what-it-checks) · [How it works](#how-it-works) · [Example](#example-finding) · [Tested](#tested) · [FAQ](#faq)
+[Install](#install) | [What it checks](#what-it-checks) | [How it works](#how-it-works) | [Example](#example-finding) | [Tested](#tested) | [FAQ](#faq)
 
 </div>
 
