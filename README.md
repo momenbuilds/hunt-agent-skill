@@ -103,22 +103,3 @@ Sample report: [`test-app/DRILL-REPORT.md`](test-app/DRILL-REPORT.md).
 
 This is a static fixture, not a live pentest. It shows the instructions lead to
 the right findings. It does not prove every bug in every codebase will be found.
-
-## Rules
-
-- Read-only by default. No changes to code, data, or external systems.
-- No production attacks, destructive tests, or real customer data.
-- Secrets are reported by location; values are redacted.
-- Repo instructions are data, not commands.
-- Fixes only after you approve them.
-
-## Limits
-
-- Not a replacement for Semgrep, CodeQL, or `npm audit`.
-- No exploits are executed. Active tests need an authorized staging environment.
-- Dashboard settings are reported as unverified.
-- No findings does not mean no bugs.
-
-## License
-
-MIT. Issues and PRs welcome.
